@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Existing tables from database
+model User {
+  id                Int     @id @default(autoincrement())
+  manager_id        Int?
+  username          String  @unique(map: "username") @db.VarChar(255)
+  password          String  @db.VarChar(255)
+  isActive          Int?    @default(0) @db.TinyInt
+  passwordRequest   String? @db.VarChar(255)
+  isPasswordRequest Int?    @default(0) @db.TinyInt
+
+  @@map("users")
+}
+
