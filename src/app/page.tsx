@@ -19,17 +19,16 @@ function HomeContent() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [hasShownError, setHasShownError] = useState(false);
 
-  // Clear invalid tokens on mount
+  // Always clear old auth data when landing on the login page
+  // This ensures a clean state after server restarts or when returning to login
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    if (errorParam === 'invalid_token') {
-      // Clear localStorage and cookies for invalid tokens
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
-      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    }
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+    // Clear cookies
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   }, []);
 
   useEffect(() => {
@@ -252,9 +251,9 @@ function HomeContent() {
           {/* Image Section - Always visible, responsive positioning */}
           <div className="xl:w-2/5 w-full flex items-center justify-center p-4 xl:p-6 bg-[#f2c812]">
             <div className="w-full h-full flex items-center justify-center">
-              <img 
-                src="/sharecells-logo.png" 
-                alt="ShareCells Logo" 
+              <img
+                src="/kanban-logo.svg"
+                alt="Kanban Logo"
                 className="w-full max-w-xs xl:max-w-full h-auto xl:max-h-full object-contain"
               />
             </div>
