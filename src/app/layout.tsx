@@ -1,8 +1,6 @@
-import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ToastProvider } from "@/components/ui/ToastProvider";
+import ClientProviders from "@/components/ClientProviders";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,18 +12,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-}
-
-export const metadata: Metadata = {
-  title: "ShareCells - Sign In",
-  description: "ShareCells cleaning circuit management platform",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,14 +19,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <title>ShareCells - Sign In</title>
+        <meta name="description" content="ShareCells cleaning circuit management platform" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ToastProvider>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

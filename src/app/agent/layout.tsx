@@ -1,62 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useToast } from '@/components/ui/ToastProvider';
+import { useMuiToast } from '@/components/ui/MuiToastProvider';
+import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Avatar from '@mui/material/Avatar';
+import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import MenuIcon from '@mui/icons-material/Menu';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
-// Navigation menu items configuration
-const menuItems = [
+const DRAWER_WIDTH_EXPANDED = 240;
+const DRAWER_WIDTH_COLLAPSED = 64;
+
+interface MenuItem {
+  id: string;
+  label: string;
+  path: string;
+  icon: ReactNode;
+}
+
+const menuItems: MenuItem[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
     path: '/agent',
-    icon: '/svg/dashboard.svg',
+    icon: <DashboardIcon />,
   },
-//   {
-//     id: 'users',
-//     label: 'Users',
-//     path: '/agent/users',
-//     icon: '/svg/users.svg',
-//   },
-  // Add more menu items here in the future
-  // {
-  //   id: 'settings',
-  //   label: 'Settings',
-  //   path: '/agent/settings',
-  //   icon: '/svg/settings.svg',
-  // },
 ];
 
-export default function AgentLayout({ children }: { children: React.ReactNode }) {
+export default function AgentLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { showToast } = useToast();
+  const { showToast } = useMuiToast();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Start collapsed
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const dropdownOpen = Boolean(anchorEl);
 
   useEffect(() => {
-    // Check screen size and set initial sidebar state
-    const handleResize = () => {
-      if (window.innerWidth >= 768) { // md breakpoint
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-    
-    // Set initial state
-    handleResize();
-    
-    // Add resize listener
-    window.addEventListener('resize', handleResize);
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (isMobile) {
+      setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
-    // Verify authentication and role
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     const userData = localStorage.getItem('user');
@@ -84,166 +95,266 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     }, 500);
   };
 
+  const handleDrawerToggle = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setSidebarOpen(!sidebarOpen);
+    }
+  };
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <img 
-            src="/svg/6-dots-spinner.svg" 
-            alt="Loading..." 
-            className="w-16 h-16 mx-auto"
-          />
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box textAlign="center">
+          <CircularProgress size={48} />
+          <Typography variant="body1" sx={{ mt: 2 }} color="text.secondary">
+            Loading...
+          </Typography>
+        </Box>
+      </Box>
     );
   }
 
-  return (
-    <div className="min-h-screen flex bg-gray-50 overflow-hidden">
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
+  const drawerContent = (
+    <>
+      {/* Logo Section */}
+      <Box
+        sx={{
+          height: 72,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'secondary.main',
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Box
+          component="img"
+          src={sidebarOpen || isMobile ? "/sharecells-logo.png" : "/sharecells-square.png"}
+          alt="ShareCells Logo"
+          sx={{
+            height: 56,
+            width: 'auto',
+            transition: 'all 0.3s',
+          }}
         />
-      )}
-      
-      {/* Left Sidebar */}
-      <aside className={`
-        bg-white shadow-lg transition-all duration-300 flex-shrink-0 overflow-hidden
-        md:relative inset-y-0 left-0 z-50
-        ${sidebarOpen ? 'w-64 fixed' : 'w-16 relative'}
-      `}>
-        <div className="h-full overflow-y-auto">
-          {/* Logo Section */}
-          <div className="border-b border-gray-200 h-18 flex items-center justify-center bg-[#f2c812]">
-            <img 
-              src={sidebarOpen ? "/sharecells-logo.png" : "/sharecells-square.png"}
-              alt="ShareCells Logo" 
-              className="w-auto transition-all duration-300 h-16 bg-[#f2c812]"
-            />
-          </div>
+      </Box>
 
-          {/* Navigation Menu */}
-          <nav className={`${sidebarOpen ? 'p-4' : 'p-2'}`}>
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => router.push(item.path)}
-              className={`w-full flex items-center mb-2 rounded-full transition-colors ${
-                sidebarOpen ? 'px-4 py-1.5 justify-start' : 'px-2 py-3 justify-center'
-              } ${
-                pathname === item.path
-                  ? 'bg-gray-100 text-gray-900 border border-gray-400'
-                  : 'text-gray-600 border border-transparent hover:bg-gray-50 hover:border hover:border-gray-200'
-              }`}
-              title={!sidebarOpen ? item.label : ''}
+      {/* Navigation Menu */}
+      <List sx={{ px: isMobile || sidebarOpen ? 2 : 1, py: 2 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.id} disablePadding sx={{ mb: 1 }}>
+            <ListItemButton
+              selected={pathname === item.path}
+              onClick={() => {
+                router.push(item.path);
+                if (isMobile) {
+                  setMobileOpen(false);
+                }
+              }}
+              sx={{
+                borderRadius: 50,
+                justifyContent: sidebarOpen || isMobile ? 'flex-start' : 'center',
+                px: isMobile || sidebarOpen ? 2 : 1,
+                '&.Mui-selected': {
+                  bgcolor: 'grey.100',
+                  borderColor: 'grey.400',
+                  borderWidth: 1,
+                  borderStyle: 'solid',
+                  '&:hover': {
+                    bgcolor: 'grey.200',
+                  },
+                },
+              }}
             >
-              <img 
-                src={item.icon} 
-                alt={item.label}
-                className={`flex-shrink-0 transition-all duration-300 ${
-                  sidebarOpen ? 'w-5 h-5 mr-3' : 'w-5 h-5'
-                }`}
-              />
-              {sidebarOpen && <span className="text-md">{item.label}</span>}
-            </button>
-          ))}
-          </nav>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 h-18 flex-shrink-0">
-          <div className="h-full px-6 flex justify-between items-center">
-            <div className="flex items-center">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Toggle Sidebar"
+              <ListItemIcon
+                sx={{
+                  minWidth: sidebarOpen || isMobile ? 40 : 0,
+                  color: pathname === item.path ? 'primary.main' : 'text.secondary',
+                  justifyContent: 'center',
+                }}
               >
-                <svg 
-                  className="w-6 h-6 text-gray-700" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M4 6h16M4 12h16M4 18h16" 
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-fullflex items-center justify-center">
-                    <img 
-                        src='/svg/user-default.svg'
-                        alt='user-icon'
-                        className="w-9 h-9 opacity-70"
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-gray-800">Agent</span>
-                  <svg className={`w-4 h-4 text-gray-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {dropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          // Handle user profile navigation
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                      >
-                        <img 
-                            src='/svg/user-account.svg'
-                            alt='user-icon'
-                            className="w-6 h-6 mr-3 opacity-70"
-                        />
-                        <span>User Profile</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          handleLogout();
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                      >
-                        <img 
-                            src='/svg/logout.svg'
-                            alt='user-icon'
-                            className="w-6 h-6 mr-3 opacity-60"
-                        />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+                {item.icon}
+              </ListItemIcon>
+              {(sidebarOpen || isMobile) && (
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontSize: '0.9375rem',
+                    fontWeight: pathname === item.path ? 600 : 400,
+                  }}
+                />
+              )}
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </>
+  );
 
-        {/* Main Content - Children will be rendered here */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
-    </div>
+  const drawerWidth = sidebarOpen ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_COLLAPSED;
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      {/* App Bar */}
+      <AppBar
+        position="fixed"
+        elevation={1}
+        sx={{
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          transition: theme.transitions.create(['width', 'margin'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="toggle drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* User Menu */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              onClick={handleMenuClick}
+              size="small"
+              sx={{
+                borderRadius: 2,
+                px: 1.5,
+                py: 0.75,
+                '&:hover': {
+                  bgcolor: 'grey.100',
+                },
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  bgcolor: 'primary.main',
+                  mr: 1,
+                }}
+              >
+                <AccountCircleIcon />
+              </Avatar>
+              <Typography variant="body2" fontWeight={500} sx={{ mr: 0.5 }}>
+                Agent
+              </Typography>
+              <KeyboardArrowDownIcon
+                sx={{
+                  transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
+                  transition: 'transform 0.3s',
+                }}
+              />
+            </IconButton>
+
+            <Menu
+              anchorEl={anchorEl}
+              open={dropdownOpen}
+              onClose={handleMenuClose}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              PaperProps={{
+                sx: { mt: 1, minWidth: 180 },
+              }}
+            >
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Logout</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar - Mobile */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: DRAWER_WIDTH_EXPANDED,
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Sidebar - Desktop */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+            overflowX: 'hidden',
+            transition: theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.leavingScreen,
+            }),
+          },
+        }}
+        open={sidebarOpen}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          mt: 8,
+          transition: theme.transitions.create(['width', 'margin'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
   );
 }
